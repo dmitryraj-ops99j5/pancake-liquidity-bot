@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pancake-liquidity-bot"
+version = "0.1.0"
+description = "Lightweight watcher for PancakeSwap pair reserves with Telegram alerts"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+pancake-watcher = "pancake_liquidity_bot.cli:main"
