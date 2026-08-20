@@ -14,10 +14,20 @@ class PoolSnapshot:
 class PairWatcher:
     """Tracks reserve history for one pair and detects sudden liquidity drains."""
 
-    def __init__(self, pair_address: str, symbol0: str, symbol1: str, drop_threshold_pct: float = 20.0):
+    def __init__(
+        self,
+        pair_address: str,
+        symbol0: str,
+        symbol1: str,
+        drop_threshold_pct: float = 20.0,
+        token0_decimals: int = 18,
+        token1_decimals: int = 18,
+    ):
         self.pair_address = pair_address.lower()
         self.symbol0 = symbol0
         self.symbol1 = symbol1
+        self.decimals0 = token0_decimals
+        self.decimals1 = token1_decimals
         self.drop_threshold_pct = drop_threshold_pct
 
         self.last_snapshot: Optional[PoolSnapshot] = None
@@ -32,6 +42,10 @@ class PairWatcher:
             self.last_snapshot = current
             self.peak_reserve0 = r0
             self.peak_reserve1 = r1
+            return None
+
+        # skip duplicate block updates if we poll faster than bsc 3s slot
+        if block_number <= self.last_snapshot.block_number:
             return None
 
         # update high water marks if pool grew
@@ -51,6 +65,7 @@ class PairWatcher:
         max_peak_drop = max(peak_drop0, peak_drop1)
 
         alert = None
+        # trigger if single-step or cumulative peak drop exceeds threshold
         if max_step_drop >= self.drop_threshold_pct or max_peak_drop >= self.drop_threshold_pct:
             alert = {
                 "pair": self.pair_address,
@@ -65,7 +80,13 @@ class PairWatcher:
                 "peak_drop0_pct": peak_drop0,
                 "peak_drop1_pct": peak_drop1,
                 "block": block_number,
+                "is_drained": (r0 == 0 or r1 == 0),
             }
+
+            # reset peak after alert so we don't keep firing if pool stays dead
+            if r0 == 0 or r1 == 0:
+                self.peak_reserve0 = r0
+                self.peak_reserve1 = r1
 
         self.last_snapshot = current
         return alert
@@ -76,3 +97,9 @@ class PairWatcher:
         if after >= before:
             return 0.0
         return ((before - after) / before) * 100.0
+
+    # FIXME: format_amount should probably live in an helpers module
+    def format_reserves(self, r0: int, r1: int) -> tuple[str, str]:
+        val0 = f"{r0 / (10 ** self.decimals0):,.4f} {self.symbol0}"
+        val1 = f"{r1 / (10 ** self.decimals1):,.4f} {self.symbol1}"
+        return val0, val1

@@ -10,12 +10,16 @@ def _split_csv(val: str) -> list[str]:
 
 @dataclass
 class Config:
+    """Runtime configuration loaded from environment or CLI flags."""
     rpc_url: str
     telegram_token: str
     telegram_chat_id: str
     pairs: list[str] = field(default_factory=list)
     poll_interval: float = 3.0
     drop_threshold_pct: float = 15.0
+    batch_size: int = 50
+    http_timeout: float = 10.0
+    min_alert_interval_sec: int = 120
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -24,14 +28,14 @@ class Config:
         chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
         pairs_raw = os.getenv("WATCH_PAIRS", "")
         
-        interval_raw = os.getenv("POLL_INTERVAL", "3.0")
-        threshold_raw = os.getenv("DROP_THRESHOLD_PCT", "15.0")
-
         return cls(
             rpc_url=rpc,
             telegram_token=token,
             telegram_chat_id=chat_id,
             pairs=_split_csv(pairs_raw),
-            poll_interval=float(interval_raw),
-            drop_threshold_pct=float(threshold_raw),
+            poll_interval=float(os.getenv("POLL_INTERVAL", "3.0")),
+            drop_threshold_pct=float(os.getenv("DROP_THRESHOLD_PCT", "15.0")),
+            batch_size=int(os.getenv("BATCH_SIZE", "50")),
+            http_timeout=float(os.getenv("HTTP_TIMEOUT", "10.0")),
+            min_alert_interval_sec=int(os.getenv("ALERT_COOLDOWN_SEC", "120")),
         )

@@ -1,5 +1,11 @@
 import pytest
-from pancake_liquidity_bot.abi import decode_reserves, decode_uint256, encode_method
+from pancake_liquidity_bot.abi import (
+    decode_reserves,
+    decode_uint256,
+    decode_sync_log,
+    encode_method,
+    SYNC_TOPIC,
+)
 
 
 def test_encode_method():
@@ -32,3 +38,20 @@ def test_decode_reserves_valid():
 def test_decode_reserves_short_payload():
     with pytest.raises(ValueError, match="invalid hex length"):
         decode_reserves("0x1234")
+
+
+def test_decode_sync_log():
+    # Sync(uint112 reserve0, uint112 reserve1) has 2 values in data field
+    r0_hex = f"{500 * 10**18:064x}"
+    r1_hex = f"{150000 * 10**18:064x}"
+    data = "0x" + r0_hex + r1_hex
+
+    r0, r1 = decode_sync_log(data)
+    assert r0 == 500 * 10**18
+    assert r1 == 150000 * 10**18
+
+
+def test_sync_topic_constant():
+    # keccak256('Sync(uint112,uint112)')
+    expected = "0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1"
+    assert SYNC_TOPIC.lower() == expected
