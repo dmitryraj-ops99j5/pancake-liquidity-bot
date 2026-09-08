@@ -41,3 +41,5 @@ Or pass multiple pairs and custom threshold:
 ```bash
 pancake-watcher --pair 0x... --pair 0x... --drop-threshold 20.0 --interval 3.0
 ```
+
+<!-- generated: 2026-09-08 -->
