@@ -42,4 +42,4 @@ Or pass multiple pairs and custom threshold:
 pancake-watcher --pair 0x... --pair 0x... --drop-threshold 20.0 --interval 3.0
 ```
 
-<!-- generated: 2026-09-11 -->
+<!-- generated: 2026-09-12 -->
